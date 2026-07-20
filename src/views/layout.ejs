@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%- typeof title != 'undefined' ? title : 'NetLab Manager' %></title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="/js/tailwind-config.js"></script>
+</head>
+<body class="bg-gray-50 font-sans antialiased text-gray-900 flex h-screen overflow-hidden">
+    <!-- Sidebar -->
+    <%- include('partials/sidebar') %>
+
+    <!-- Main Content -->
+    <div class="relative flex flex-col flex-1 overflow-y-auto overflow-x-hidden bg-gray-50">
+        <header class="sticky top-0 bg-white border-b border-gray-200 z-30">
+            <div class="px-4 sm:px-6 lg:px-8">
+                <div class="flex items-center justify-between h-16 -mb-px">
+                    <div class="flex items-center">
+                        <h1 class="text-2xl font-bold text-gray-800"><%- typeof title != 'undefined' ? title : 'Dashboard' %></h1>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <span class="text-sm font-medium text-gray-500">Welcome, <%- typeof user != 'undefined' ? user : 'Admin' %></span>
+                        <a href="/logout" class="px-4 py-2 text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors">Logout</a>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main>
+            <div class="px-4 sm:px-6 lg:px-8 py-8 w-full max-w-9xl mx-auto">
+                <%- body %>
+            </div>
+        </main>
+    </div>
+</body>
+</html>

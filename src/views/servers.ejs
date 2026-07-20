@@ -1,0 +1,359 @@
+<div class="flex justify-between items-center mb-6">
+    <h2 class="text-2xl font-bold text-gray-800">Server Management</h2>
+    <button onclick="document.getElementById('addServerModal').classList.remove('hidden')" class="bg-primary hover:bg-secondary text-white font-bold py-2 px-4 rounded-lg flex items-center transition-colors">
+        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+        Add Server
+    </button>
+</div>
+
+<!-- Servers Table -->
+<div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-8">
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Hostname</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">IP Address</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
+                    <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="serversTableBody" class="bg-white divide-y divide-gray-200">
+                <% if (servers && servers.length > 0) { %>
+                    <% servers.forEach(function(server) { %>
+                        <tr id="server-row-<%= server.id %>">
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="flex items-center">
+                                    <div class="flex-shrink-0 h-10 w-10 flex items-center justify-center rounded-full bg-blue-100 text-primary">
+                                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01" />
+                                        </svg>
+                                    </div>
+                                    <div class="ml-4">
+                                        <div class="text-sm font-medium text-gray-900 server-hostname"><%= server.hostname %></div>
+                                        <div class="text-sm text-gray-500 server-username-ip"><%= server.username %>@<%= server.ip %>:<%= server.ssh_port %></div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 server-ip">
+                                <%= server.ip %>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="server-role px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                    <%= server.role %>
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 server-created">
+                                <%= server.formattedDate || 'Unknown' %>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                <button type="button" onclick="openEditModal(JSON.parse(this.dataset.server))" data-server="<%= JSON.stringify(server) %>" class="text-indigo-600 hover:text-indigo-900 mr-4 btn-edit">Edit</button>
+                                <button type="button" onclick="deleteServer(<%= server.id %>)" class="text-red-600 hover:text-red-900">Delete</button>
+                            </td>
+                        </tr>
+                    <% }); %>
+                <% } else { %>
+                    <tr id="no-servers-row">
+                        <td colspan="5" class="px-6 py-12 text-center text-gray-500">
+                            <svg class="mx-auto h-12 w-12 text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                            </svg>
+                            <p class="text-lg font-medium">No servers configured</p>
+                            <p class="mt-1 text-sm text-gray-500">Get started by adding a new Raspberry Pi node.</p>
+                        </td>
+                    </tr>
+                <% } %>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- How to Connect Tutorial -->
+<div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-8">
+    <div class="flex items-center mb-4">
+        <svg class="w-6 h-6 text-accent mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+        <h2 class="text-lg font-bold text-gray-800">How to Connect a Raspberry Pi</h2>
+    </div>
+    <div class="prose max-w-none text-gray-600">
+        <p class="mb-4">To successfully connect your Raspberry Pi to NetLab Manager, follow these steps:</p>
+        <ol class="list-decimal pl-5 space-y-2">
+            <li>Ensure the Raspberry Pi is connected to the same network as this management server.</li>
+            <li>Enable SSH on the Raspberry Pi (using <code>sudo raspi-config</code> or placing a blank <code>ssh</code> file in the boot directory).</li>
+            <li>Assign a static IP address to the Raspberry Pi to prevent connectivity issues on reboot.</li>
+            <li>Generate an SSH key pair on this management server if you haven't already.</li>
+            <li>Copy the public key to the Raspberry Pi: <code>ssh-copy-id username@pi-ip-address</code>.</li>
+            <li>Click <strong>Add Server</strong> above and enter the correct Hostname, IP, SSH Port, and SSH Username.</li>
+        </ol>
+    </div>
+</div>
+
+<!-- Add Server Modal -->
+<div id="addServerModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-center justify-center">
+    <div class="relative bg-white rounded-lg shadow-xl w-full max-w-md p-6">
+        <div class="flex justify-between items-center mb-5">
+            <h3 class="text-lg font-bold text-gray-900">Add New Server</h3>
+            <button onclick="document.getElementById('addServerModal').classList.add('hidden')" class="text-gray-400 hover:text-gray-500">
+                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+        </div>
+        <div id="addErrorContainer" class="hidden bg-red-50 border-l-4 border-red-500 text-red-700 p-4 rounded shadow-sm mb-4"></div>
+        <form id="addServerForm" class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Hostname</label>
+                <input type="text" name="hostname" required class="w-full border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary p-2 border">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">IP Address</label>
+                <input type="text" name="ip" required pattern="^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$" title="Valid IPv4 Address" class="w-full border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary p-2 border">
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">SSH Port</label>
+                    <input type="number" name="ssh_port" value="22" required class="w-full border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary p-2 border">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Username</label>
+                    <input type="text" name="username" value="pi" required class="w-full border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary p-2 border">
+                </div>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Role</label>
+                <select name="role" class="w-full border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary p-2 border">
+                    <option value="node">Worker Node</option>
+                    <option value="master">Master Node</option>
+                    <option value="database">Database</option>
+                </select>
+            </div>
+            <div class="mt-6 flex justify-end space-x-3">
+                <button type="button" onclick="document.getElementById('addServerModal').classList.add('hidden')" class="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">Cancel</button>
+                <button type="submit" class="bg-primary py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white hover:bg-secondary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">Save Server</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Edit Server Modal -->
+<div id="editServerModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-center justify-center">
+    <div class="relative bg-white rounded-lg shadow-xl w-full max-w-md p-6">
+        <div class="flex justify-between items-center mb-5">
+            <h3 class="text-lg font-bold text-gray-900">Edit Server</h3>
+            <button onclick="document.getElementById('editServerModal').classList.add('hidden')" class="text-gray-400 hover:text-gray-500">
+                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+        </div>
+        <div id="editErrorContainer" class="hidden bg-red-50 border-l-4 border-red-500 text-red-700 p-4 rounded shadow-sm mb-4"></div>
+        <form id="editServerForm" class="space-y-4">
+            <input type="hidden" id="edit_id" name="id">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Hostname</label>
+                <input type="text" id="edit_hostname" name="hostname" required class="w-full border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary p-2 border">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">IP Address</label>
+                <input type="text" id="edit_ip" name="ip" required pattern="^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$" class="w-full border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary p-2 border">
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">SSH Port</label>
+                    <input type="number" id="edit_ssh_port" name="ssh_port" required class="w-full border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary p-2 border">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Username</label>
+                    <input type="text" id="edit_username" name="username" required class="w-full border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary p-2 border">
+                </div>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Role</label>
+                <select id="edit_role" name="role" class="w-full border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary p-2 border">
+                    <option value="node">Worker Node</option>
+                    <option value="master">Master Node</option>
+                    <option value="database">Database</option>
+                </select>
+            </div>
+            <div class="mt-6 flex justify-end space-x-3">
+                <button type="button" onclick="document.getElementById('editServerModal').classList.add('hidden')" class="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">Cancel</button>
+                <button type="submit" class="bg-primary py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white hover:bg-secondary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">Update Server</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    /**
+     * Helper to render a table row dynamically.
+     * @param {Object} server
+     * @returns {string}
+     */
+    function renderServerRowHtml(server) {
+        const serverJson = JSON.stringify(server).replace(/'/g, '&#39;');
+        return `
+            <td class="px-6 py-4 whitespace-nowrap">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0 h-10 w-10 flex items-center justify-center rounded-full bg-blue-100 text-primary">
+                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01" />
+                        </svg>
+                    </div>
+                    <div class="ml-4">
+                        <div class="text-sm font-medium text-gray-900 server-hostname">\${server.hostname}</div>
+                        <div class="text-sm text-gray-500 server-username-ip">\${server.username}@\${server.ip}:\${server.ssh_port}</div>
+                    </div>
+                </div>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 server-ip">
+                \${server.ip}
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap">
+                <span class="server-role px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                    \${server.role}
+                </span>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 server-created">
+                \${server.formattedDate || 'Just now'}
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                <button type="button" onclick="openEditModal(JSON.parse(this.dataset.server))" data-server='\${serverJson}' class="text-indigo-600 hover:text-indigo-900 mr-4 btn-edit">Edit</button>
+                <button type="button" onclick="deleteServer(\${server.id})" class="text-red-600 hover:text-red-900">Delete</button>
+            </td>
+        `;
+    }
+
+    /**
+     * Handles Add Server form submission via AJAX.
+     */
+    document.getElementById('addServerForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        const data = Object.fromEntries(formData.entries());
+        
+        try {
+            const res = await fetch('/servers', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            const result = await res.json();
+            
+            if (!res.ok) {
+                const errDiv = document.getElementById('addErrorContainer');
+                errDiv.textContent = result.error || 'Failed to add server.';
+                errDiv.classList.remove('hidden');
+                return;
+            }
+
+            document.getElementById('addServerModal').classList.add('hidden');
+            this.reset();
+            document.getElementById('addErrorContainer').classList.add('hidden');
+            
+            const noServers = document.getElementById('no-servers-row');
+            if (noServers) noServers.remove();
+            
+            const tr = document.createElement('tr');
+            tr.id = 'server-row-' + result.server.id;
+            tr.innerHTML = renderServerRowHtml(result.server);
+            document.getElementById('serversTableBody').appendChild(tr);
+            
+        } catch (err) {
+            console.error('Network error:', err);
+        }
+    });
+
+    /**
+     * Opens the edit modal and populates form data.
+     * @param {Object} server
+     * @returns {void}
+     */
+    function openEditModal(server) {
+        document.getElementById('edit_id').value = server.id;
+        document.getElementById('edit_hostname').value = server.hostname;
+        document.getElementById('edit_ip').value = server.ip;
+        document.getElementById('edit_ssh_port').value = server.ssh_port;
+        document.getElementById('edit_username').value = server.username;
+        document.getElementById('edit_role').value = server.role;
+        document.getElementById('editErrorContainer').classList.add('hidden');
+        document.getElementById('editServerModal').classList.remove('hidden');
+    }
+
+    /**
+     * Handles Edit Server form submission via AJAX.
+     */
+    document.getElementById('editServerForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        const data = Object.fromEntries(formData.entries());
+        const id = data.id;
+        
+        try {
+            const res = await fetch('/servers/' + id + '/update', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            const result = await res.json();
+            
+            if (!res.ok) {
+                const errDiv = document.getElementById('editErrorContainer');
+                errDiv.textContent = result.error || 'Failed to update server.';
+                errDiv.classList.remove('hidden');
+                return;
+            }
+
+            document.getElementById('editServerModal').classList.add('hidden');
+            document.getElementById('editErrorContainer').classList.add('hidden');
+            
+            const tr = document.getElementById('server-row-' + id);
+            if (tr) {
+                result.server.formattedDate = tr.querySelector('.server-created') ? tr.querySelector('.server-created').textContent.trim() : 'Just now';
+                tr.innerHTML = renderServerRowHtml(result.server);
+            }
+            
+        } catch (err) {
+            console.error('Network error:', err);
+        }
+    });
+
+    /**
+     * Handles server deletion via AJAX.
+     * @param {number} id
+     */
+    async function deleteServer(id) {
+        if (!confirm('Are you sure you want to delete this server?')) return;
+        
+        try {
+            const res = await fetch('/servers/' + id + '/delete', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            const result = await res.json();
+            
+            if (!res.ok) {
+                alert(result.error || 'Failed to delete server.');
+                return;
+            }
+
+            const tr = document.getElementById('server-row-' + id);
+            if (tr) tr.remove();
+            
+            if (document.getElementById('serversTableBody').children.length === 0) {
+                document.getElementById('serversTableBody').innerHTML = \`
+                    <tr id="no-servers-row">
+                        <td colspan="5" class="px-6 py-12 text-center text-gray-500">
+                            <svg class="mx-auto h-12 w-12 text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                            </svg>
+                            <p class="text-lg font-medium">No servers configured</p>
+                            <p class="mt-1 text-sm text-gray-500">Get started by adding a new Raspberry Pi node.</p>
+                        </td>
+                    </tr>
+                \`;
+            }
+            
+        } catch (err) {
+            console.error('Network error:', err);
+            alert('Failed to delete server due to a network error.');
+        }
+    }
+</script>
