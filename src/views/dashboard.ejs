@@ -8,7 +8,7 @@
         </div>
         <div>
             <p class="text-sm font-medium text-gray-500">Total Servers</p>
-            <p class="text-2xl font-bold text-gray-900">0</p>
+            <p id="dash-total-servers" class="text-2xl font-bold text-gray-900">0</p>
         </div>
     </div>
     
@@ -21,38 +21,192 @@
         </div>
         <div>
             <p class="text-sm font-medium text-gray-500">Active Nodes</p>
-            <p class="text-2xl font-bold text-gray-900">0</p>
+            <p id="dash-active-nodes" class="text-2xl font-bold text-gray-900">0</p>
         </div>
     </div>
     
     <!-- Stat 3 -->
     <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center">
-        <div class="p-3 bg-purple-50 text-purple-600 rounded-lg mr-4">
+        <div class="p-3 bg-red-50 text-red-600 rounded-lg mr-4">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z" />
             </svg>
         </div>
         <div>
-            <p class="text-sm font-medium text-gray-500">Containers</p>
-            <p class="text-2xl font-bold text-gray-900">0</p>
+            <p class="text-sm font-medium text-gray-500">Offline Nodes</p>
+            <p id="dash-offline-nodes" class="text-2xl font-bold text-gray-900">0</p>
         </div>
     </div>
     
     <!-- Stat 4 -->
     <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center">
-        <div class="p-3 bg-red-50 text-red-600 rounded-lg mr-4">
+        <div class="p-3 bg-purple-50 text-purple-600 rounded-lg mr-4">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
             </svg>
         </div>
         <div>
-            <p class="text-sm font-medium text-gray-500">Alerts</p>
-            <p class="text-2xl font-bold text-gray-900">0</p>
+            <p class="text-sm font-medium text-gray-500">Master / Worker</p>
+            <p id="dash-role-dist" class="text-2xl font-bold text-gray-900">0 / 0</p>
         </div>
     </div>
 </div>
 
 <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-    <h2 class="text-lg font-bold text-gray-800 mb-4">System Overview</h2>
-    <p class="text-gray-600">Command center is up and running. Use the sidebar to navigate to the Servers module and start adding your Raspberry Pi devices.</p>
+    <h2 class="text-lg font-bold text-gray-800 mb-6">System Overview (Average)</h2>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
+        <!-- CPU Chart -->
+        <div>
+            <div class="relative w-48 h-24 mx-auto overflow-hidden">
+                <canvas id="cpuChart" class="absolute bottom-0"></canvas>
+                <div class="absolute inset-x-0 bottom-0 flex items-center justify-center mb-1">
+                    <span class="text-2xl font-bold text-gray-800" id="cpuAvgText">0%</span>
+                </div>
+            </div>
+            <p class="mt-2 font-semibold text-gray-700">CPU Usage</p>
+        </div>
+        <!-- RAM Chart -->
+        <div>
+            <div class="relative w-48 h-24 mx-auto overflow-hidden">
+                <canvas id="ramChart" class="absolute bottom-0"></canvas>
+                <div class="absolute inset-x-0 bottom-0 flex items-center justify-center mb-1">
+                    <span class="text-2xl font-bold text-gray-800" id="ramAvgText">0%</span>
+                </div>
+            </div>
+            <p class="mt-2 font-semibold text-gray-700">RAM Usage</p>
+        </div>
+        <!-- Disk Chart -->
+        <div>
+            <div class="relative w-48 h-24 mx-auto overflow-hidden">
+                <canvas id="diskChart" class="absolute bottom-0"></canvas>
+                <div class="absolute inset-x-0 bottom-0 flex items-center justify-center mb-1">
+                    <span class="text-2xl font-bold text-gray-800" id="diskAvgText">0%</span>
+                </div>
+            </div>
+            <p class="mt-2 font-semibold text-gray-700">Disk Usage</p>
+        </div>
+    </div>
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    let cpuChart, ramChart, diskChart;
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const gaugeOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '75%',
+            circumference: 180,
+            rotation: 270,
+            plugins: {
+                tooltip: { enabled: false },
+                legend: { display: false }
+            },
+            animation: {
+                duration: 500
+            }
+        };
+
+        function createChart(ctxId, color) {
+            const ctx = document.getElementById(ctxId).getContext('2d');
+            return new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    datasets: [{
+                        data: [0, 100],
+                        backgroundColor: [color, '#F3F4F6'],
+                        borderWidth: 0,
+                        borderRadius: [5, 5]
+                    }]
+                },
+                options: gaugeOptions
+            });
+        }
+
+        cpuChart = createChart('cpuChart', '#3B82F6'); // blue-500
+        ramChart = createChart('ramChart', '#10B981'); // emerald-500
+        diskChart = createChart('diskChart', '#F59E0B'); // amber-500
+
+        // Initial render if data is already available
+        if (window.NetLabStore && window.NetLabStore.servers) {
+            updateDashboard(window.NetLabStore.servers);
+        }
+    });
+
+    document.addEventListener('netlab-state-updated', (e) => {
+        updateDashboard(e.detail.servers);
+    });
+
+    function updateDashboard(servers) {
+        if (!servers) return;
+
+        const total = servers.length;
+        const active = servers.filter(s => s.status === 'Online').length;
+        const offline = servers.filter(s => s.status === 'Offline' || s.status === 'Checking...').length;
+        
+        const master = servers.filter(s => s.role.toLowerCase() === 'master').length;
+        const worker = servers.filter(s => s.role.toLowerCase() === 'worker' || s.role.toLowerCase() === 'node').length;
+        
+        document.getElementById('dash-total-servers').textContent = total;
+        document.getElementById('dash-active-nodes').textContent = active;
+        document.getElementById('dash-offline-nodes').textContent = offline;
+        document.getElementById('dash-role-dist').textContent = master + ' / ' + worker;
+
+        // Calculate averages for the gauges
+        const onlineServers = servers.filter(s => s.status === 'Online' && s.stats);
+        const count = onlineServers.length;
+        
+        let cpuSum = 0;
+        let ramSum = 0;
+        let diskSum = 0;
+
+        onlineServers.forEach(server => {
+            cpuSum += Math.min(parseFloat(server.stats.cpu) || 0, 100);
+            
+            let ramVal = 0;
+            if (server.stats.ram && server.stats.ram.includes('/')) {
+                const ramParts = server.stats.ram.replace(/[^\d.\/]/g, '').split('/');
+                if (ramParts.length === 2) {
+                    const used = parseFloat(ramParts[0]);
+                    const total = parseFloat(ramParts[1]);
+                    if (total > 0) ramVal = (used / total) * 100;
+                }
+            }
+            ramSum += Math.min(ramVal, 100);
+            
+            let diskVal = 0;
+            if (server.stats.disk) {
+                const diskMatch = server.stats.disk.match(/\((\d+)%\)/);
+                if (diskMatch && diskMatch[1]) {
+                    diskVal = parseFloat(diskMatch[1]);
+                } else {
+                    diskVal = parseFloat(server.stats.disk) || 0;
+                }
+            }
+            diskSum += Math.min(diskVal, 100);
+        });
+
+        const cpuAvg = count ? (cpuSum / count) : 0;
+        const ramAvg = count ? (ramSum / count) : 0;
+        const diskAvg = count ? (diskSum / count) : 0;
+
+        if (cpuChart) {
+            cpuChart.data.datasets[0].data = [cpuAvg, 100 - cpuAvg];
+            cpuChart.update();
+            document.getElementById('cpuAvgText').textContent = cpuAvg.toFixed(1) + '%';
+        }
+        
+        if (ramChart) {
+            ramChart.data.datasets[0].data = [ramAvg, 100 - ramAvg];
+            ramChart.update();
+            document.getElementById('ramAvgText').textContent = ramAvg.toFixed(1) + '%';
+        }
+        
+        if (diskChart) {
+            diskChart.data.datasets[0].data = [diskAvg, 100 - diskAvg];
+            diskChart.update();
+            document.getElementById('diskAvgText').textContent = diskAvg.toFixed(1) + '%';
+        }
+    }
+</script>

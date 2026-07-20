@@ -10,7 +10,9 @@ const { createAuthController } = require('./controllers/authController');
 const { createAuthRoutes } = require('./routes/authRoutes');
 const { createServerController } = require('./controllers/serverController');
 const { createServerRoutes } = require('./routes/serverRoutes');
+const { createTerminalController } = require('./controllers/terminalController');
 const { requireAuth } = require('./middleware/authMiddleware');
+const WebSocket = require('ws');
 
 /**
  * Starts the NetLab Manager Express application server.
@@ -27,6 +29,7 @@ function startServer() {
   const authRoutes = createAuthRoutes(authController);
   const serverController = createServerController(db);
   const serverRoutes = createServerRoutes(serverController);
+  const terminalController = createTerminalController(db);
 
   app.set('view engine', 'ejs');
   app.set('views', path.join(__dirname, 'views'));
@@ -43,9 +46,11 @@ function startServer() {
           scriptSrc: [
             '\'self\'',
             '\'unsafe-inline\'',
-            'https://cdn.tailwindcss.com'
+            'https://cdn.tailwindcss.com',
+            'https://cdn.jsdelivr.net'
           ],
-          styleSrc: ['\'self\'', '\'unsafe-inline\'']
+          styleSrc: ['\'self\'', '\'unsafe-inline\'', 'https://cdn.jsdelivr.net'],
+          connectSrc: ['\'self\'', 'ws:', 'wss:', 'https://cdn.jsdelivr.net']
         }
       }
     })
@@ -78,9 +83,23 @@ function startServer() {
     });
   });
 
-  app.listen(port, () => {
+  const server = app.listen(port, () => {
     console.log('Server is running on port ' + port);
   });
+  
+  const wsServer = new WebSocket.Server({ noServer: true });
+  
+  server.on('upgrade', (request, socket, head) => {
+    if (request.url.startsWith('/terminal-ws/')) {
+      wsServer.handleUpgrade(request, socket, head, (ws) => {
+        wsServer.emit('connection', ws, request);
+      });
+    } else {
+      socket.destroy();
+    }
+  });
+  
+  wsServer.on('connection', terminalController.handleTerminalConnection);
 }
 
 startServer();

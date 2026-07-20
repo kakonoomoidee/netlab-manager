@@ -1,4 +1,5 @@
 const { formatDistanceToNow } = require('date-fns');
+const { pingServer: sshPingServer, executeCommand: sshExecuteCommand, getSystemStats: sshGetSystemStats } = require('../services/sshService');
 
 /**
  * Validates server data payload.
@@ -73,6 +74,40 @@ function createServerController(db) {
         servers: formattedServers,
         error: null
       });
+    });
+  }
+
+  /**
+   * Retrieves all servers as JSON data.
+   * @param {Object} req
+   * @param {Object} res
+   * @returns {void}
+   */
+  function getServersData(req, res) {
+    db.all('SELECT * FROM servers', [], (err, rows) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).json({ error: 'Database error occurred while fetching servers.' });
+      }
+      
+      const formattedServers = rows.map(server => {
+        let formattedDate = 'Unknown';
+        if (server.created_at) {
+          try {
+            const dateStr = server.created_at.replace(' ', 'T') + 'Z';
+            const dateObj = new Date(dateStr);
+            formattedDate = formatDistanceToNow(dateObj, { addSuffix: true });
+          } catch (e) {
+            console.error('Date parsing error:', e);
+          }
+        }
+        return {
+          ...server,
+          formattedDate
+        };
+      });
+
+      res.status(200).json({ success: true, servers: formattedServers });
     });
   }
 
@@ -190,11 +225,135 @@ function createServerController(db) {
     });
   }
 
+  /**
+   * Pings a server via SSH to check its health.
+   * @param {Object} req
+   * @param {Object} res
+   * @returns {void}
+   */
+  function pingServer(req, res) {
+    const id = req.params.id;
+
+    db.get('SELECT * FROM servers WHERE id = ?', [id], async (err, server) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).json({ error: 'Database error occurred while fetching server.' });
+      }
+
+      if (!server) {
+        return res.status(404).json({ error: 'Server not found.' });
+      }
+
+      try {
+        const isOnline = await sshPingServer(server);
+        res.status(200).json({ status: isOnline ? 'Online' : 'Offline' });
+      } catch (e) {
+        console.error('Ping error:', e);
+        res.status(200).json({ status: 'Offline' });
+      }
+    });
+  }
+
+  /**
+   * Fetches real-time stats for a server.
+   * @param {Object} req
+   * @param {Object} res
+   * @returns {void}
+   */
+  function getServerStats(req, res) {
+    const id = req.params.id;
+
+    db.get('SELECT * FROM servers WHERE id = ?', [id], async (err, server) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).json({ error: 'Database error occurred while fetching server.' });
+      }
+
+      if (!server) {
+        return res.status(404).json({ error: 'Server not found.' });
+      }
+
+      try {
+        const stats = await sshGetSystemStats(server);
+        res.status(200).json({ success: true, stats });
+      } catch (e) {
+        console.error('Stats error:', e);
+        res.status(500).json({ error: 'Failed to fetch server stats.' });
+      }
+    });
+  }
+
+  /**
+   * Executes a command on a remote server.
+   * @param {Object} req
+   * @param {Object} res
+   * @returns {void}
+   */
+  function executeServerCommand(req, res) {
+    const id = req.params.id;
+    const { command } = req.body;
+
+    if (!command || typeof command !== 'string' || command.trim() === '') {
+      return res.status(400).json({ error: 'Command is required.' });
+    }
+
+    db.get('SELECT * FROM servers WHERE id = ?', [id], async (err, server) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).json({ error: 'Database error occurred while fetching server.' });
+      }
+
+      if (!server) {
+        return res.status(404).json({ error: 'Server not found.' });
+      }
+
+      try {
+        const result = await sshExecuteCommand(server, command);
+        res.status(200).json({ success: true, ...result });
+      } catch (e) {
+        console.error('Execution error:', e);
+        res.status(500).json({ error: e.message || 'Failed to execute command.' });
+      }
+    });
+  }
+
+  /**
+   * Renders the web terminal view for a specific server.
+   * @param {Object} req
+   * @param {Object} res
+   * @returns {void}
+   */
+  function getTerminalView(req, res) {
+    const id = req.params.id;
+    
+    db.get('SELECT * FROM servers WHERE id = ?', [id], (err, server) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).send('Database error');
+      }
+      if (!server) {
+        return res.status(404).send('Server not found');
+      }
+      
+      res.render('terminal', {
+        title: 'Terminal - ' + server.hostname,
+        server,
+        user: req.user,
+        layout: false
+      });
+    });
+  }
+
   return {
     getAllServers,
+    getServersData,
     createServer,
     updateServer,
-    deleteServer
+    deleteServer,
+    pingServer,
+    getServerStats,
+    executeServerCommand,
+    getTerminalView
   };
 }
 
