@@ -1,0 +1,244 @@
+<div class="px-8 py-6">
+    <div class="mb-8 flex justify-between items-center">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">Docker Manager</h1>
+            <p class="text-gray-500 mt-1">Manage and monitor containers across your servers.</p>
+        </div>
+        
+        <div class="flex items-center space-x-4">
+            <select id="serverSelect" class="block w-64 pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md shadow-sm">
+                <option value="" disabled selected>Select a server...</option>
+            </select>
+            <button id="refreshBtn" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary hover:bg-secondary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed">
+                Refresh
+            </button>
+        </div>
+    </div>
+    
+    <div id="errorContainer" class="hidden mb-6 bg-red-50 border-l-4 border-red-400 p-4">
+        <div class="flex">
+            <div class="flex-shrink-0">
+                <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                </svg>
+            </div>
+            <div class="ml-3">
+                <p class="text-sm text-red-700 font-medium" id="errorMessage"></p>
+                <p class="text-xs text-red-600 mt-1 font-mono" id="errorDetails"></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Containers Table -->
+    <div class="bg-white shadow overflow-hidden sm:rounded-lg border border-gray-200">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Container ID</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Names</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Image</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ports</th>
+                        <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200" id="containersTableBody">
+                    <tr>
+                        <td colspan="6" class="px-6 py-10 text-center text-sm text-gray-500">
+                            Select a server above to view its Docker containers.
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const USER_ROLE = '<%- userRole %>';
+        const serverSelect = document.getElementById('serverSelect');
+        const refreshBtn = document.getElementById('refreshBtn');
+        const tbody = document.getElementById('containersTableBody');
+        const errorContainer = document.getElementById('errorContainer');
+        const errorMessage = document.getElementById('errorMessage');
+        const errorDetails = document.getElementById('errorDetails');
+        
+        // Populate select from NetLabStore
+        window.addEventListener('netlab-state-updated', () => {
+            if (!window.NetLabStore || !window.NetLabStore.servers) return;
+            
+            const currentVal = serverSelect.value;
+            serverSelect.innerHTML = '<option value="" disabled selected>Select a server...</option>';
+            
+            window.NetLabStore.servers.forEach(server => {
+                if (server.status === 'online') {
+                    const opt = document.createElement('option');
+                    opt.value = server.id;
+                    opt.textContent = `${server.hostname} (${server.ip})`;
+                    if (server.id.toString() === currentVal) opt.selected = true;
+                    serverSelect.appendChild(opt);
+                }
+            });
+        });
+
+        // Trigger initial fetch if store already has data
+        if (window.NetLabStore && window.NetLabStore.servers && window.NetLabStore.servers.length > 0) {
+            window.dispatchEvent(new CustomEvent('netlab-state-updated'));
+        }
+
+        /**
+         * Fetches and renders containers for the selected server.
+         */
+        async function fetchContainers() {
+            const serverId = serverSelect.value;
+            if (!serverId) return;
+            
+            refreshBtn.disabled = true;
+            refreshBtn.textContent = 'Loading...';
+            errorContainer.classList.add('hidden');
+            
+            tbody.innerHTML = `<tr><td colspan="6" class="px-6 py-10 text-center text-sm text-gray-500"><svg class="animate-spin h-5 w-5 text-gray-400 mx-auto mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Connecting via SSH and fetching containers...</td></tr>`;
+
+            try {
+                const res = await fetch('/docker/api/' + serverId + '/containers');
+                const data = await res.json();
+                
+                if (!res.ok) {
+                    throw { message: data.error || 'Failed to fetch containers', cause: data.details };
+                }
+
+                if (data.containers.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="6" class="px-6 py-10 text-center text-sm text-gray-500">No containers found on this server.</td></tr>`;
+                } else {
+                    renderContainers(data.containers);
+                }
+
+            } catch (err) {
+                tbody.innerHTML = `<tr><td colspan="6" class="px-6 py-10 text-center text-sm text-red-500">Error fetching data.</td></tr>`;
+                errorMessage.textContent = err.message || 'An unexpected error occurred.';
+                errorDetails.textContent = err.cause || '';
+                errorContainer.classList.remove('hidden');
+            } finally {
+                refreshBtn.disabled = false;
+                refreshBtn.textContent = 'Refresh';
+            }
+        }
+        
+        /**
+         * Executes an action on a container (start, stop, restart, delete).
+         * @param {string} containerId
+         * @param {string} action
+         */
+        window.handleContainerAction = async function(containerId, action) {
+            const serverId = serverSelect.value;
+            if (!serverId) return;
+            
+            const btn = document.getElementById(`btn-${action}-${containerId}`);
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<svg class="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>';
+            }
+
+            try {
+                const method = action === 'delete' ? 'DELETE' : 'POST';
+                const endpoint = action === 'delete' ? `/docker/api/${serverId}/containers/${containerId}` : `/docker/api/${serverId}/containers/${containerId}/${action}`;
+                
+                const res = await fetch(endpoint, { method });
+                const data = await res.json();
+                
+                if (!res.ok) {
+                    throw new Error(data.error || 'Action failed');
+                }
+                
+                // Refresh list on success
+                fetchContainers();
+                
+            } catch (err) {
+                alert('Error: ' + err.message);
+                if (btn) btn.disabled = false;
+                fetchContainers();
+            }
+        };
+
+        /**
+         * Fetches and displays logs for a container.
+         * @param {string} containerId
+         * @param {string} containerName
+         */
+        window.fetchContainerLogs = async function(containerId, containerName) {
+            const serverId = serverSelect.value;
+            if (!serverId) return;
+            
+            const btn = document.getElementById(`btn-logs-${containerId}`);
+            if (btn) {
+                btn.disabled = true;
+            }
+
+            try {
+                const res = await fetch(`/docker/api/${serverId}/containers/${containerId}/logs`);
+                const data = await res.json();
+                
+                if (!res.ok) {
+                    throw new Error(data.error || 'Failed to fetch logs');
+                }
+                
+                if (window.ModalManager) {
+                    window.ModalManager.showLogsModal(`Logs: ${containerName}`, data.stdout || data.stderr || 'No logs found.');
+                }
+            } catch (err) {
+                alert('Error fetching logs: ' + err.message);
+            } finally {
+                if (btn) btn.disabled = false;
+            }
+        };
+
+        /**
+         * Renders the fetched containers to the table.
+         * @param {Array} containers
+         */
+        function renderContainers(containers) {
+            tbody.innerHTML = '';
+            containers.forEach(container => {
+                const isRunning = container.State && container.State.toLowerCase() === 'running';
+                const statusColor = isRunning ? 'text-green-800 bg-green-100' : 'text-gray-800 bg-gray-100';
+                
+                let startBtn = '', stopBtn = '', restartBtn = '', deleteBtn = '';
+                if (USER_ROLE === 'admin') {
+                    startBtn = !isRunning ? `<button id="btn-start-${container.ID}" onclick="handleContainerAction('${container.ID}', 'start')" class="text-green-600 hover:text-green-900 mr-3" title="Start"><svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></button>` : '';
+                    stopBtn = isRunning ? `<button id="btn-stop-${container.ID}" onclick="handleContainerAction('${container.ID}', 'stop')" class="text-yellow-600 hover:text-yellow-900 mr-3" title="Stop"><svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" /></svg></button>` : '';
+                    restartBtn = `<button id="btn-restart-${container.ID}" onclick="handleContainerAction('${container.ID}', 'restart')" class="text-blue-600 hover:text-blue-900 mr-3" title="Restart"><svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg></button>`;
+                    deleteBtn = `<button id="btn-delete-${container.ID}" onclick="handleContainerAction('${container.ID}', 'delete')" class="text-red-600 hover:text-red-900 mr-3" title="Delete"><svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>`;
+                }
+                const logsBtn = `<button id="btn-logs-${container.ID}" onclick="fetchContainerLogs('${container.ID}', '${container.Names}')" class="text-gray-600 hover:text-gray-900" title="Logs"><svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg></button>`;
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-900">${container.ID}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${container.Names}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${container.Image}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${statusColor}">
+                            ${container.Status}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-mono text-xs max-w-xs truncate" title="${container.Ports}">
+                        ${container.Ports || '-'}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium flex justify-end items-center">
+                        ${startBtn}
+                        ${stopBtn}
+                        ${restartBtn}
+                        ${deleteBtn}
+                        ${logsBtn}
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        serverSelect.addEventListener('change', fetchContainers);
+        refreshBtn.addEventListener('click', fetchContainers);
+    });
+</script>

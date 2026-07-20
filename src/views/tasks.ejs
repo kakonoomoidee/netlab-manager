@@ -1,0 +1,230 @@
+<div class="px-8 py-6 max-w-7xl mx-auto">
+    <div class="mb-8">
+        <h1 class="text-2xl font-bold text-gray-900">Mass Task Execution</h1>
+        <p class="text-gray-500 mt-1">Broadcast shell commands concurrently across multiple servers.</p>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Configuration Panel -->
+        <div class="lg:col-span-1 space-y-6">
+            <div class="bg-white shadow overflow-hidden sm:rounded-lg border border-gray-200">
+                <div class="px-4 py-5 sm:px-6 bg-gray-50 border-b border-gray-200">
+                    <h3 class="text-lg leading-6 font-medium text-gray-900">Target Servers</h3>
+                    <p class="mt-1 max-w-2xl text-sm text-gray-500">Select online servers to execute the command on.</p>
+                </div>
+                <div class="px-4 py-5 sm:p-6">
+                    <div id="serverChecklist" class="space-y-4 max-h-64 overflow-y-auto">
+                        <p class="text-sm text-gray-500 italic">Loading servers...</p>
+                    </div>
+                </div>
+            </div>
+            
+            <% if (userRole === 'admin') { %>
+            <button id="executeBtn" class="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-secondary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                Execute on Selected
+            </button>
+            <% } %>
+            <div id="errorBanner" class="hidden rounded-md bg-red-50 p-4">
+                <div class="flex">
+                    <div class="ml-3">
+                        <h3 class="text-sm font-medium text-red-800" id="errorText"></h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Command Panel -->
+        <div class="lg:col-span-2">
+            <div class="bg-white shadow overflow-hidden sm:rounded-lg border border-gray-200 h-full flex flex-col" style="min-height: 400px;">
+                <div class="px-4 py-5 sm:px-6 bg-gray-50 border-b border-gray-200 flex justify-between items-center">
+                    <div>
+                        <h3 class="text-lg leading-6 font-medium text-gray-900">Shell Script</h3>
+                        <p class="mt-1 max-w-2xl text-sm text-gray-500">Enter the shell command or script to execute.</p>
+                    </div>
+                </div>
+                <div class="flex-1 p-0 relative h-full w-full">
+                    <% if (userRole === 'admin') { %>
+                    <textarea id="commandInput" class="absolute inset-0 w-full h-full p-4 font-mono text-sm bg-[#1e1e1e] text-gray-100 border-0 focus:ring-0 resize-none outline-none" placeholder="#!/bin/bash&#10;&#10;echo 'Hello World'"></textarea>
+                    <% } else { %>
+                    <div class="absolute inset-0 w-full h-full p-4 font-mono text-sm bg-[#1e1e1e] text-gray-400 border-0 overflow-y-auto flex items-center justify-center">
+                        <div class="text-center">
+                            <svg class="mx-auto h-12 w-12 text-gray-500 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+                            <p>Read-only mode. Admin access required to execute tasks.</p>
+                        </div>
+                    </div>
+                    <% } %>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Results Panel -->
+    <div id="resultsContainer" class="mt-8 space-y-6 hidden">
+        <h2 class="text-xl font-bold text-gray-900">Execution Results</h2>
+        <div id="resultsList" class="space-y-4">
+            <!-- Results injected here -->
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const serverChecklist = document.getElementById('serverChecklist');
+        const executeBtn = document.getElementById('executeBtn');
+        const commandInput = document.getElementById('commandInput');
+        const errorBanner = document.getElementById('errorBanner');
+        const errorText = document.getElementById('errorText');
+        const resultsContainer = document.getElementById('resultsContainer');
+        const resultsList = document.getElementById('resultsList');
+        
+        let onlineServerIds = [];
+
+        /**
+         * Populates the server checklist dynamically from NetLabStore.
+         */
+        function populateChecklist() {
+            if (!window.NetLabStore || !window.NetLabStore.servers) return;
+            
+            serverChecklist.innerHTML = '';
+            onlineServerIds = [];
+            
+            const onlineServers = window.NetLabStore.servers.filter(s => s.status === 'online');
+            
+            if (onlineServers.length === 0) {
+                serverChecklist.innerHTML = '<p class="text-sm text-gray-500 italic">No online servers available.</p>';
+                return;
+            }
+
+            onlineServers.forEach(server => {
+                onlineServerIds.push(server.id);
+                
+                const div = document.createElement('div');
+                div.className = 'flex items-start';
+                div.innerHTML = `
+                    <div class="flex items-center h-5">
+                        <input id="server-${server.id}" name="servers" value="${server.id}" type="checkbox" class="focus:ring-primary h-4 w-4 text-primary border-gray-300 rounded cursor-pointer" checked>
+                    </div>
+                    <div class="ml-3 text-sm">
+                        <label for="server-${server.id}" class="font-medium text-gray-700 cursor-pointer">${server.hostname}</label>
+                        <p class="text-gray-500 font-mono text-xs">${server.ip}</p>
+                    </div>
+                `;
+                serverChecklist.appendChild(div);
+            });
+        }
+
+        window.addEventListener('netlab-state-updated', populateChecklist);
+        
+        if (window.NetLabStore && window.NetLabStore.servers) {
+            populateChecklist();
+        }
+
+        if (executeBtn) {
+            executeBtn.addEventListener('click', async () => {
+                errorBanner.classList.add('hidden');
+                resultsContainer.classList.add('hidden');
+                resultsList.innerHTML = '';
+                
+                const command = commandInput.value.trim();
+                if (!command) {
+                    errorText.textContent = 'Command cannot be empty.';
+                    errorBanner.classList.remove('hidden');
+                    return;
+                }
+
+                const checkboxes = document.querySelectorAll('input[name="servers"]:checked');
+                const selectedIds = Array.from(checkboxes).map(cb => parseInt(cb.value, 10));
+                
+                if (selectedIds.length === 0) {
+                    errorText.textContent = 'Please select at least one server.';
+                    errorBanner.classList.remove('hidden');
+                    return;
+                }
+
+                executeBtn.disabled = true;
+                executeBtn.innerHTML = '<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Executing...';
+
+                try {
+                    const res = await fetch('/tasks/api/execute', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ command, serverIds: selectedIds })
+                    });
+
+                    const data = await res.json();
+                    
+                    if (!res.ok) {
+                        throw new Error(data.error || 'Execution failed');
+                    }
+
+                    renderResults(data.results);
+                    
+                } catch (err) {
+                    errorText.textContent = err.message;
+                    errorBanner.classList.remove('hidden');
+                } finally {
+                    executeBtn.disabled = false;
+                    executeBtn.textContent = 'Execute on Selected';
+                }
+            });
+        }
+
+        /**
+         * Renders the execution results.
+         * @param {Array} results
+         */
+        function renderResults(results) {
+            resultsContainer.classList.remove('hidden');
+            resultsList.innerHTML = '';
+
+            results.forEach(result => {
+                const isError = result.status === 'error';
+                const borderColor = isError ? 'border-red-200' : 'border-gray-200';
+                const headerBg = isError ? 'bg-red-50' : 'bg-gray-50';
+                const textColor = isError ? 'text-red-700' : 'text-gray-900';
+                const statusIcon = isError 
+                    ? '<svg class="h-5 w-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>'
+                    : '<svg class="h-5 w-5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>';
+
+                let outputHtml = '';
+                if (isError) {
+                    outputHtml = `<div class="text-sm text-red-600 font-mono whitespace-pre-wrap p-4">${escapeHtml(result.error)}</div>`;
+                } else {
+                    const out = result.stdout ? `<div class="text-gray-300 p-4 pb-2 border-b border-gray-700 last:border-0"><strong class="text-gray-500 uppercase text-xs tracking-wider mb-2 block">stdout:</strong>${escapeHtml(result.stdout)}</div>` : '';
+                    const err = result.stderr ? `<div class="text-yellow-400 p-4 border-b border-gray-700 last:border-0"><strong class="text-gray-500 uppercase text-xs tracking-wider mb-2 block">stderr:</strong>${escapeHtml(result.stderr)}</div>` : '';
+                    outputHtml = `<div class="text-sm font-mono whitespace-pre-wrap">${out}${err}</div>`;
+                }
+
+                const div = document.createElement('div');
+                div.className = `bg-white shadow overflow-hidden sm:rounded-lg border ${borderColor}`;
+                div.innerHTML = `
+                    <div class="px-4 py-4 ${headerBg} flex justify-between items-center border-b ${borderColor}">
+                        <div class="flex items-center space-x-3">
+                            ${statusIcon}
+                            <h3 class="text-md leading-6 font-medium ${textColor}">${result.hostname} <span class="text-sm font-normal text-gray-500 font-mono ml-2">${result.ip}</span></h3>
+                        </div>
+                    </div>
+                    <div class="bg-[#111827] overflow-x-auto rounded-b-lg">
+                        ${outputHtml || '<div class="text-gray-500 italic text-sm p-4">No output</div>'}
+                    </div>
+                `;
+                resultsList.appendChild(div);
+            });
+        }
+
+        /**
+         * Escapes HTML entities.
+         * @param {string} unsafe
+         * @returns {string}
+         */
+        function escapeHtml(unsafe) {
+            if (!unsafe) return '';
+            return unsafe
+                 .replace(/&/g, "&amp;")
+                 .replace(/</g, "&lt;")
+                 .replace(/>/g, "&gt;")
+                 .replace(/"/g, "&quot;")
+                 .replace(/'/g, "&#039;");
+        }
+    });
+</script>

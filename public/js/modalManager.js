@@ -315,6 +315,33 @@
                 window.removeEventListener('resize', this._terminalResizeHandler);
                 this._terminalResizeHandler = null;
             }
+        },
+
+        /**
+         * Shows the Logs Modal with a specific title and log content.
+         * @param {string} title
+         * @param {string} logs
+         */
+        showLogsModal: function(title, logs) {
+            const modal = document.getElementById('globalLogsModal');
+            const titleEl = document.getElementById('globalLogsTitle');
+            const contentEl = document.getElementById('globalLogsContent');
+            
+            if (!modal || !titleEl || !contentEl) return;
+            
+            titleEl.textContent = title;
+            contentEl.textContent = logs;
+            modal.classList.remove('hidden');
+        },
+
+        /**
+         * Hides the Logs Modal and clears content.
+         */
+        hideLogsModal: function() {
+            const modal = document.getElementById('globalLogsModal');
+            const contentEl = document.getElementById('globalLogsContent');
+            if (modal) modal.classList.add('hidden');
+            if (contentEl) contentEl.textContent = '';
         }
     };
 
@@ -362,6 +389,13 @@
             });
         }
         
+        const logsCloseBtn = document.getElementById('globalLogsCloseBtn');
+        if (logsCloseBtn) {
+            logsCloseBtn.addEventListener('click', () => {
+                window.ModalManager.hideLogsModal();
+            });
+        }
+        
         // Close modals on Escape key press
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
@@ -369,6 +403,7 @@
                 window.ModalManager.hideConfirmModal();
                 window.ModalManager.hideStatsModal();
                 window.ModalManager.hideTerminalModal();
+                window.ModalManager.hideLogsModal();
                 
                 // Support for the add server modal if it exists
                 const addServerModal = document.getElementById('addServerModal');
@@ -388,6 +423,8 @@
                 window.ModalManager.hideStatsModal();
             } else if (e.target.id === 'globalTerminalModal') {
                 window.ModalManager.hideTerminalModal();
+            } else if (e.target.id === 'globalLogsModal') {
+                window.ModalManager.hideLogsModal();
             } else if (e.target.id === 'addServerModal') {
                 e.target.classList.add('hidden');
             }

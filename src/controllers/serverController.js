@@ -46,6 +46,7 @@ function createServerController(db) {
         return res.render('servers', {
           title: 'Servers - NetLab Manager',
           user: req.session.username,
+          userRole: req.session.role,
           currentRoute: 'servers',
           servers: [],
           error: 'Failed to retrieve servers from database.'
@@ -70,6 +71,7 @@ function createServerController(db) {
       res.render('servers', {
         title: 'Servers - NetLab Manager',
         user: req.session.username,
+        userRole: req.session.role,
         currentRoute: 'servers',
         servers: formattedServers,
         error: null

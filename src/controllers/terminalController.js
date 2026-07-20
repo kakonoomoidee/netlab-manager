@@ -19,6 +19,11 @@ function createTerminalController(db) {
     const urlParts = request.url.split('/');
     const serverId = urlParts[urlParts.length - 1];
 
+    if (!request.session || request.session.role !== 'admin') {
+      ws.send('\r\n\x1b[31mError: Unauthorized access. Admin role required to access the terminal.\x1b[0m\r\n');
+      return ws.close();
+    }
+
     if (!serverId) {
       ws.send('\r\n\x1b[31mError: Server ID not provided.\x1b[0m\r\n');
       return ws.close();

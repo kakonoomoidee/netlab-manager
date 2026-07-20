@@ -149,6 +149,25 @@
     </div>
 </div>
 
+<!-- Logs Modal -->
+<div id="globalLogsModal" class="hidden fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg shadow-xl w-full max-w-4xl mx-4 flex flex-col" style="max-height: 80vh;">
+        <!-- Header -->
+        <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gray-50 rounded-t-lg">
+            <h3 class="text-lg leading-6 font-medium text-gray-900 font-mono" id="globalLogsTitle">Container Logs</h3>
+            <button type="button" id="globalLogsCloseBtn" class="text-gray-400 hover:text-gray-500 focus:outline-none">
+                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+        <!-- Logs Body -->
+        <div class="flex-1 p-0 bg-[#111827] overflow-hidden rounded-b-lg flex">
+            <pre id="globalLogsContent" class="flex-1 w-full h-full p-4 overflow-auto text-sm text-gray-300 font-mono m-0 whitespace-pre-wrap"></pre>
+        </div>
+    </div>
+</div>
+
 <!-- xterm.js dependencies -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.css" />
 <script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.js"></script>
