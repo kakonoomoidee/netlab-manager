@@ -1,54 +1,240 @@
-<div class="px-8 py-6 max-w-3xl mx-auto">
+<div class="px-8 py-6 max-w-7xl mx-auto h-full">
     <div class="mb-8">
         <h1 class="text-2xl font-bold text-gray-900">Settings</h1>
         <p class="text-gray-500 mt-1">Manage your account credentials and personal preferences.</p>
     </div>
 
-    <div class="bg-white shadow overflow-hidden sm:rounded-lg border border-gray-200">
-        <div class="px-4 py-5 sm:px-6 bg-gray-50 border-b border-gray-200">
-            <h3 class="text-lg leading-6 font-medium text-gray-900">Change Password</h3>
-            <p class="mt-1 max-w-2xl text-sm text-gray-500">Ensure your account is using a long, random password to stay secure.</p>
-        </div>
+    <div class="flex flex-col md:flex-row gap-8">
         
-        <div class="px-4 py-5 sm:p-6">
-            <form id="passwordForm" class="space-y-6">
-                <div id="statusBanner" class="hidden rounded-md p-4 mb-4 border" style="border-color: currentColor;">
-                    <p class="text-sm font-medium" id="statusText"></p>
-                </div>
+        <div class="w-full md:w-64 flex-shrink-0">
+            <nav class="space-y-1" aria-label="Settings navigation">
+                <button data-target="security-panel" class="tab-button w-full text-left px-3 py-2 text-sm font-medium rounded-md bg-blue-50 text-primary border-l-4 border-primary transition-colors">
+                    Security
+                </button>
+                
+                <button data-target="personalize-panel" class="tab-button w-full text-left px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-50 hover:text-gray-900 border-l-4 border-transparent transition-colors">
+                    Personalize
+                </button>
+                
+                <% if (userRole === 'admin') { %>
+                <button data-target="system-panel" class="tab-button w-full text-left px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-50 hover:text-gray-900 border-l-4 border-transparent transition-colors">
+                    System Settings
+                </button>
+                
+                <button data-target="notifications-panel" class="tab-button w-full text-left px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-50 hover:text-gray-900 border-l-4 border-transparent transition-colors">
+                    Notifications
+                </button>
+                
+                <button data-target="integrations-panel" class="tab-button w-full text-left px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-50 hover:text-gray-900 border-l-4 border-transparent transition-colors">
+                    Integrations
+                </button>
+                <% } %>
+            </nav>
+        </div>
 
-                <div>
-                    <label for="oldPassword" class="block text-sm font-medium text-gray-700">Current Password</label>
-                    <div class="mt-1">
-                        <input type="password" id="oldPassword" required class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm">
+        
+        <div class="flex-1 max-w-3xl">
+            
+            <div id="security-panel" class="tab-panel">
+                <div class="bg-white shadow overflow-hidden sm:rounded-lg border border-gray-200">
+                    <div class="px-4 py-5 sm:px-6 bg-gray-50 border-b border-gray-200">
+                        <h3 class="text-lg leading-6 font-medium text-gray-900">Change Password</h3>
+                        <p class="mt-1 max-w-2xl text-sm text-gray-500">Ensure your account is using a long, random password to stay secure.</p>
+                    </div>
+                    
+                    <div class="px-4 py-5 sm:p-6">
+                        <form id="passwordForm" class="space-y-6">
+                            <div id="statusBanner" class="hidden rounded-md p-4 mb-4 border" style="border-color: currentColor;">
+                                <p class="text-sm font-medium" id="statusText"></p>
+                            </div>
+
+                            <div>
+                                <label for="oldPassword" class="block text-sm font-medium text-gray-700">Current Password</label>
+                                <div class="mt-1">
+                                    <input type="password" id="oldPassword" required class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm">
+                                </div>
+                            </div>
+
+                            <div>
+                                <label for="newPassword" class="block text-sm font-medium text-gray-700">New Password</label>
+                                <div class="mt-1">
+                                    <input type="password" id="newPassword" required class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm">
+                                </div>
+                            </div>
+
+                            <div>
+                                <label for="confirmPassword" class="block text-sm font-medium text-gray-700">Confirm New Password</label>
+                                <div class="mt-1">
+                                    <input type="password" id="confirmPassword" required class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm">
+                                </div>
+                            </div>
+
+                            <div class="pt-4 flex justify-end">
+                                <button type="submit" id="submitBtn" class="ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary hover:bg-secondary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors disabled:opacity-50">
+                                    Save Password
+                                </button>
+                            </div>
+                        </form>
                     </div>
                 </div>
-
-                <div>
-                    <label for="newPassword" class="block text-sm font-medium text-gray-700">New Password</label>
-                    <div class="mt-1">
-                        <input type="password" id="newPassword" required class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm">
+            </div>
+            
+            <div id="personalize-panel" class="tab-panel hidden">
+                <div class="bg-white shadow overflow-hidden sm:rounded-lg border border-gray-200">
+                    <div class="px-4 py-5 sm:px-6 bg-gray-50 border-b border-gray-200">
+                        <h3 class="text-lg leading-6 font-medium text-gray-900">Personalize</h3>
+                        <p class="mt-1 max-w-2xl text-sm text-gray-500">Customize your dashboard experience.</p>
+                    </div>
+                    <div class="px-4 py-5 sm:p-6 space-y-6">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h4 class="text-sm font-medium text-gray-900">Dark Mode</h4>
+                                <p class="text-sm text-gray-500">Toggle dark theme for the dashboard.</p>
+                            </div>
+                            <button type="button" class="bg-gray-200 relative inline-flex flex-shrink-0 h-6 w-11 border-2 border-transparent rounded-full cursor-pointer transition-colors ease-in-out duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">
+                                <span class="translate-x-0 pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform ring-0 transition ease-in-out duration-200"></span>
+                            </button>
+                        </div>
+                        
+                        <div class="border-t border-gray-200 pt-6">
+                            <label for="timezone" class="block text-sm font-medium text-gray-700">Timezone</label>
+                            <select id="timezone" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md shadow-sm">
+                                <option>UTC</option>
+                                <option>America/New_York</option>
+                                <option>Europe/London</option>
+                                <option>Asia/Tokyo</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
+            </div>
 
-                <div>
-                    <label for="confirmPassword" class="block text-sm font-medium text-gray-700">Confirm New Password</label>
-                    <div class="mt-1">
-                        <input type="password" id="confirmPassword" required class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm">
+            <% if (userRole === 'admin') { %>
+            <div id="system-panel" class="tab-panel hidden">
+                <div class="bg-white shadow overflow-hidden sm:rounded-lg border border-gray-200">
+                    <div class="px-4 py-5 sm:px-6 bg-gray-50 border-b border-gray-200">
+                        <h3 class="text-lg leading-6 font-medium text-gray-900">System Settings</h3>
+                        <p class="mt-1 max-w-2xl text-sm text-gray-500">Global configurations for the application.</p>
+                    </div>
+                    <div class="px-4 py-5 sm:p-6 space-y-6">
+                        <div>
+                            <label for="defaultSshPort" class="block text-sm font-medium text-gray-700">Default SSH Port</label>
+                            <div class="mt-1">
+                                <input type="number" id="defaultSshPort" value="22" class="shadow-sm focus:ring-primary focus:border-primary block w-full sm:text-sm border-gray-300 rounded-md py-2 px-3 border">
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label for="sessionTimeout" class="block text-sm font-medium text-gray-700">Session Timeout (minutes)</label>
+                            <div class="mt-1">
+                                <input type="number" id="sessionTimeout" value="60" class="shadow-sm focus:ring-primary focus:border-primary block w-full sm:text-sm border-gray-300 rounded-md py-2 px-3 border">
+                            </div>
+                        </div>
+                        
+                        <div class="pt-4">
+                            <button type="button" class="bg-primary hover:bg-secondary text-white font-bold py-2 px-4 rounded transition-colors text-sm">Save System Config</button>
+                        </div>
                     </div>
                 </div>
+            </div>
 
-                <div class="pt-4 flex justify-end">
-                    <button type="submit" id="submitBtn" class="ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary hover:bg-secondary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors disabled:opacity-50">
-                        Save Password
-                    </button>
+            <div id="notifications-panel" class="tab-panel hidden">
+                <div class="bg-white shadow overflow-hidden sm:rounded-lg border border-gray-200">
+                    <div class="px-4 py-5 sm:px-6 bg-gray-50 border-b border-gray-200">
+                        <h3 class="text-lg leading-6 font-medium text-gray-900">Notifications</h3>
+                        <p class="mt-1 max-w-2xl text-sm text-gray-500">Manage external webhook alerts.</p>
+                    </div>
+                    <div class="px-4 py-5 sm:p-6 space-y-6">
+                        <div>
+                            <label for="telegramWebhook" class="block text-sm font-medium text-gray-700">Telegram Webhook URL</label>
+                            <div class="mt-1">
+                                <input type="url" id="telegramWebhook" placeholder="https://api.telegram.org/bot..." class="shadow-sm focus:ring-primary focus:border-primary block w-full sm:text-sm border-gray-300 rounded-md py-2 px-3 border">
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label for="discordWebhook" class="block text-sm font-medium text-gray-700">Discord Webhook URL</label>
+                            <div class="mt-1">
+                                <input type="url" id="discordWebhook" placeholder="https://discord.com/api/webhooks/..." class="shadow-sm focus:ring-primary focus:border-primary block w-full sm:text-sm border-gray-300 rounded-md py-2 px-3 border">
+                            </div>
+                        </div>
+                        
+                        <div class="pt-4">
+                            <button type="button" class="bg-primary hover:bg-secondary text-white font-bold py-2 px-4 rounded transition-colors text-sm">Save Webhooks</button>
+                        </div>
+                    </div>
                 </div>
-            </form>
+            </div>
+
+            <div id="integrations-panel" class="tab-panel hidden">
+                <div class="bg-white shadow overflow-hidden sm:rounded-lg border border-gray-200">
+                    <div class="px-4 py-5 sm:px-6 bg-gray-50 border-b border-gray-200">
+                        <h3 class="text-lg leading-6 font-medium text-gray-900">Integrations</h3>
+                        <p class="mt-1 max-w-2xl text-sm text-gray-500">Configure third-party API keys and tokens.</p>
+                    </div>
+                    <div class="px-4 py-5 sm:p-6 space-y-6">
+                        <div>
+                            <label for="githubToken" class="block text-sm font-medium text-gray-700">GitHub Personal Access Token</label>
+                            <div class="mt-1">
+                                <input type="password" id="githubToken" placeholder="ghp_..." class="shadow-sm focus:ring-primary focus:border-primary block w-full sm:text-sm border-gray-300 rounded-md py-2 px-3 border">
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label for="dockerHubToken" class="block text-sm font-medium text-gray-700">Docker Hub Access Token</label>
+                            <div class="mt-1">
+                                <input type="password" id="dockerHubToken" class="shadow-sm focus:ring-primary focus:border-primary block w-full sm:text-sm border-gray-300 rounded-md py-2 px-3 border">
+                            </div>
+                        </div>
+                        
+                        <div class="pt-4">
+                            <button type="button" class="bg-primary hover:bg-secondary text-white font-bold py-2 px-4 rounded transition-colors text-sm">Save Integrations</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <% } %>
+
         </div>
     </div>
 </div>
 
 <script>
     document.addEventListener('DOMContentLoaded', () => {
+        const tabButtons = document.querySelectorAll('.tab-button');
+        const tabPanels = document.querySelectorAll('.tab-panel');
+
+        function switchTab(targetId) {
+            tabPanels.forEach(panel => {
+                panel.classList.add('hidden');
+            });
+            
+            tabButtons.forEach(btn => {
+                btn.classList.remove('bg-blue-50', 'text-primary', 'border-primary');
+                btn.classList.add('text-gray-600', 'border-transparent');
+            });
+
+            const activePanel = document.getElementById(targetId);
+            if (activePanel) {
+                activePanel.classList.remove('hidden');
+            }
+
+            const activeBtn = document.querySelector(`[data-target="${targetId}"]`);
+            if (activeBtn) {
+                activeBtn.classList.remove('text-gray-600', 'border-transparent');
+                activeBtn.classList.add('bg-blue-50', 'text-primary', 'border-primary');
+            }
+        }
+
+        tabButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const target = btn.getAttribute('data-target');
+                if (target) {
+                    switchTab(target);
+                }
+            });
+        });
+
         const form = document.getElementById('passwordForm');
         const oldPassword = document.getElementById('oldPassword');
         const newPassword = document.getElementById('newPassword');
@@ -72,46 +258,48 @@
             statusText.textContent = message;
         }
 
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            statusBanner.classList.add('hidden');
+        if (form) {
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                statusBanner.classList.add('hidden');
 
-            if (newPassword.value !== confirmPassword.value) {
-                showBanner('New passwords do not match.', true);
-                return;
-            }
+                if (newPassword.value !== confirmPassword.value) {
+                    showBanner('New passwords do not match.', true);
+                    return;
+                }
 
-            if (newPassword.value.length < 8) {
-                showBanner('New password must be at least 8 characters long.', true);
-                return;
-            }
+                if (newPassword.value.length < 8) {
+                    showBanner('New password must be at least 8 characters long.', true);
+                    return;
+                }
 
-            submitBtn.disabled = true;
-            submitBtn.textContent = 'Saving...';
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Saving...';
 
-            try {
-                const res = await fetch('/settings/api/settings/password', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        oldPassword: oldPassword.value,
-                        newPassword: newPassword.value
-                    })
-                });
+                try {
+                    const res = await fetch('/settings/api/settings/password', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            oldPassword: oldPassword.value,
+                            newPassword: newPassword.value
+                        })
+                    });
 
-                const data = await res.json();
-                
-                if (!res.ok) throw new Error(data.error || 'Failed to update password');
-                
-                showBanner('Password successfully updated!', false);
-                form.reset();
-                
-            } catch (err) {
-                showBanner(err.message, true);
-            } finally {
-                submitBtn.disabled = false;
-                submitBtn.textContent = 'Save Password';
-            }
-        });
+                    const data = await res.json();
+                    
+                    if (!res.ok) throw new Error(data.error || 'Failed to update password');
+                    
+                    showBanner('Password successfully updated!', false);
+                    form.reset();
+                    
+                } catch (err) {
+                    showBanner(err.message, true);
+                } finally {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Save Password';
+                }
+            });
+        }
     });
 </script>
