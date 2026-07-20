@@ -1,0 +1,117 @@
+<div class="px-8 py-6 max-w-3xl mx-auto">
+    <div class="mb-8">
+        <h1 class="text-2xl font-bold text-gray-900">Settings</h1>
+        <p class="text-gray-500 mt-1">Manage your account credentials and personal preferences.</p>
+    </div>
+
+    <div class="bg-white shadow overflow-hidden sm:rounded-lg border border-gray-200">
+        <div class="px-4 py-5 sm:px-6 bg-gray-50 border-b border-gray-200">
+            <h3 class="text-lg leading-6 font-medium text-gray-900">Change Password</h3>
+            <p class="mt-1 max-w-2xl text-sm text-gray-500">Ensure your account is using a long, random password to stay secure.</p>
+        </div>
+        
+        <div class="px-4 py-5 sm:p-6">
+            <form id="passwordForm" class="space-y-6">
+                <div id="statusBanner" class="hidden rounded-md p-4 mb-4 border" style="border-color: currentColor;">
+                    <p class="text-sm font-medium" id="statusText"></p>
+                </div>
+
+                <div>
+                    <label for="oldPassword" class="block text-sm font-medium text-gray-700">Current Password</label>
+                    <div class="mt-1">
+                        <input type="password" id="oldPassword" required class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm">
+                    </div>
+                </div>
+
+                <div>
+                    <label for="newPassword" class="block text-sm font-medium text-gray-700">New Password</label>
+                    <div class="mt-1">
+                        <input type="password" id="newPassword" required class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm">
+                    </div>
+                </div>
+
+                <div>
+                    <label for="confirmPassword" class="block text-sm font-medium text-gray-700">Confirm New Password</label>
+                    <div class="mt-1">
+                        <input type="password" id="confirmPassword" required class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm">
+                    </div>
+                </div>
+
+                <div class="pt-4 flex justify-end">
+                    <button type="submit" id="submitBtn" class="ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary hover:bg-secondary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors disabled:opacity-50">
+                        Save Password
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const form = document.getElementById('passwordForm');
+        const oldPassword = document.getElementById('oldPassword');
+        const newPassword = document.getElementById('newPassword');
+        const confirmPassword = document.getElementById('confirmPassword');
+        const submitBtn = document.getElementById('submitBtn');
+        const statusBanner = document.getElementById('statusBanner');
+        const statusText = document.getElementById('statusText');
+
+        function showBanner(message, isError) {
+            statusBanner.classList.remove('hidden', 'bg-red-50', 'bg-green-50', 'border-red-200', 'border-green-200');
+            statusText.classList.remove('text-red-800', 'text-green-800');
+            
+            if (isError) {
+                statusBanner.classList.add('bg-red-50', 'border-red-200');
+                statusText.classList.add('text-red-800');
+            } else {
+                statusBanner.classList.add('bg-green-50', 'border-green-200');
+                statusText.classList.add('text-green-800');
+            }
+            
+            statusText.textContent = message;
+        }
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            statusBanner.classList.add('hidden');
+
+            if (newPassword.value !== confirmPassword.value) {
+                showBanner('New passwords do not match.', true);
+                return;
+            }
+
+            if (newPassword.value.length < 8) {
+                showBanner('New password must be at least 8 characters long.', true);
+                return;
+            }
+
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Saving...';
+
+            try {
+                const res = await fetch('/settings/api/settings/password', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        oldPassword: oldPassword.value,
+                        newPassword: newPassword.value
+                    })
+                });
+
+                const data = await res.json();
+                
+                if (!res.ok) throw new Error(data.error || 'Failed to update password');
+                
+                showBanner('Password successfully updated!', false);
+                form.reset();
+                
+            } catch (err) {
+                showBanner(err.message, true);
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Save Password';
+            }
+        });
+    });
+</script>

@@ -20,6 +20,10 @@ const { createDeployController } = require('./controllers/deployController');
 const { createDeployRoutes } = require('./routes/deployRoutes');
 const { createUserController } = require('./controllers/userController');
 const { createUserRoutes } = require('./routes/userRoutes');
+const { createSettingsController } = require('./controllers/settingsController');
+const { createSettingsRoutes } = require('./routes/settingsRoutes');
+const { createLogController } = require('./controllers/logController');
+const { createLogRoutes } = require('./routes/logRoutes');
 const { createTerminalController } = require('./controllers/terminalController');
 const { requireAuth, requireAdmin } = require('./middleware/authMiddleware');
 const WebSocket = require('ws');
@@ -49,6 +53,10 @@ function startServer() {
   const deployRoutes = createDeployRoutes(deployController);
   const userController = createUserController(db);
   const userRoutes = createUserRoutes(userController);
+  const settingsController = createSettingsController(db);
+  const settingsRoutes = createSettingsRoutes(settingsController);
+  const logController = createLogController();
+  const logRoutes = createLogRoutes(logController);
   const terminalController = createTerminalController(db);
 
   app.set('view engine', 'ejs');
@@ -99,6 +107,8 @@ function startServer() {
   app.use('/files', fileRoutes);
   app.use('/deploy', deployRoutes);
   app.use('/users', userRoutes);
+  app.use('/settings', settingsRoutes);
+  app.use('/logs', logRoutes);
 
   app.get('/', requireAuth, (req, res) => {
     res.render('dashboard', {
@@ -151,6 +161,24 @@ function startServer() {
       user: req.session.username,
       userRole: req.session.role,
       currentRoute: 'users'
+    });
+  });
+
+  app.get('/settings', requireAuth, (req, res) => {
+    res.render('settings', {
+      title: 'Settings - NetLab Manager',
+      user: req.session.username,
+      userRole: req.session.role,
+      currentRoute: 'settings'
+    });
+  });
+
+  app.get('/logs', requireAuth, requireAdmin, (req, res) => {
+    res.render('logs', {
+      title: 'System Logs - NetLab Manager',
+      user: req.session.username,
+      userRole: req.session.role,
+      currentRoute: 'logs'
     });
   });
 

@@ -1,0 +1,88 @@
+<div class="px-8 py-6 max-w-7xl mx-auto h-[calc(100vh-4rem)] flex flex-col">
+    <div class="flex justify-between items-center mb-6">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">System Logs</h1>
+            <p class="text-gray-500 mt-1">Real-time internal application output and system events.</p>
+        </div>
+        <div>
+            <button id="refreshLogsBtn" class="bg-primary hover:bg-secondary text-white font-bold py-2 px-4 rounded-lg flex items-center transition-colors shadow-sm">
+                <svg class="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                Refresh Logs
+            </button>
+        </div>
+    </div>
+
+    <!-- Error Banner -->
+    <div id="errorBanner" class="hidden rounded-md bg-red-50 p-4 mb-6 border border-red-200">
+        <div class="flex">
+            <div class="ml-3">
+                <h3 class="text-sm font-medium text-red-800" id="errorText"></h3>
+            </div>
+        </div>
+    </div>
+
+    <!-- Terminal Output Panel -->
+    <div class="bg-white shadow overflow-hidden sm:rounded-lg border border-gray-200 flex-1 flex flex-col min-h-0">
+        <div class="px-4 py-3 bg-gray-50 border-b border-gray-200 flex justify-between items-center">
+            <h3 class="text-sm font-medium text-gray-700">app.log</h3>
+            <span class="text-xs text-gray-500" id="lastUpdated">Last updated: Never</span>
+        </div>
+        <div class="flex-1 p-0 relative bg-[#1e1e1e]">
+            <div id="logOutput" class="absolute inset-0 w-full h-full p-4 font-mono text-sm text-gray-300 overflow-y-auto whitespace-pre-wrap">Loading system logs...</div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const logOutput = document.getElementById('logOutput');
+        const refreshLogsBtn = document.getElementById('refreshLogsBtn');
+        const errorBanner = document.getElementById('errorBanner');
+        const errorText = document.getElementById('errorText');
+        const lastUpdated = document.getElementById('lastUpdated');
+
+        async function fetchLogs() {
+            refreshLogsBtn.disabled = true;
+            refreshLogsBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            errorBanner.classList.add('hidden');
+            
+            try {
+                const res = await fetch('/logs/api/logs');
+                const data = await res.json();
+                
+                if (!res.ok) throw new Error(data.error || 'Failed to fetch logs');
+                
+                logOutput.innerHTML = escapeHtml(data.logs);
+                
+                const now = new Date();
+                lastUpdated.textContent = `Last updated: ${now.toLocaleTimeString()}`;
+                
+                // Auto-scroll to bottom
+                logOutput.scrollTop = logOutput.scrollHeight;
+                
+            } catch (err) {
+                errorText.textContent = err.message;
+                errorBanner.classList.remove('hidden');
+                logOutput.innerHTML = `<span class="text-red-500">Error: ${escapeHtml(err.message)}</span>`;
+            } finally {
+                refreshLogsBtn.disabled = false;
+                refreshLogsBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
+        }
+
+        function escapeHtml(unsafe) {
+            if (!unsafe) return '';
+            return unsafe
+                 .replace(/&/g, "&amp;")
+                 .replace(/</g, "&lt;")
+                 .replace(/>/g, "&gt;")
+                 .replace(/"/g, "&quot;")
+                 .replace(/'/g, "&#039;");
+        }
+
+        refreshLogsBtn.addEventListener('click', fetchLogs);
+
+        // Initial fetch
+        fetchLogs();
+    });
+</script>
