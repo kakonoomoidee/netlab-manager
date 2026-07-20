@@ -18,6 +18,11 @@
             <div class="px-4 sm:px-6 lg:px-8">
                 <div class="flex items-center justify-between h-16 -mb-px">
                     <div class="flex items-center">
+                        <button id="mobile-menu-btn" class="md:hidden mr-4 text-gray-500 hover:text-gray-700 focus:outline-none">
+                            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                            </svg>
+                        </button>
                         <h1 class="text-2xl font-bold text-gray-800"><%- typeof title != 'undefined' ? title : 'Dashboard' %></h1>
                     </div>
                     <div class="flex items-center space-x-3">
@@ -37,5 +42,22 @@
 
     <%- include('partials/globalModals') %>
     <script src="/js/modalManager.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+            const sidebar = document.getElementById('sidebar');
+            const sidebarOverlay = document.getElementById('sidebar-overlay');
+
+            if (mobileMenuBtn && sidebar && sidebarOverlay) {
+                function toggleMenu() {
+                    sidebar.classList.toggle('-translate-x-full');
+                    sidebarOverlay.classList.toggle('hidden');
+                }
+
+                mobileMenuBtn.addEventListener('click', toggleMenu);
+                sidebarOverlay.addEventListener('click', toggleMenu);
+            }
+        });
+    </script>
 </body>
 </html>
