@@ -1,16 +1,44 @@
 {
   "name": "managable-server",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "nodemon src/app.js",
-    "start": "node src/app.js"
+  "version": "1.2.0",
+  "codename": "Phoenix",
+  "description": "Backend server for provisioning and managing isolated SSH/dev instances with real-time WebSocket monitoring.",
+  "main": "src/app.js",
+  "type": "commonjs",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "scripts": {
+    "start": "node src/app.js",
+    "dev": "nodemon src/app.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "eslint . --ext .js",
+    "lint:fix": "eslint . --ext .js --fix",
+    "format": "prettier --write \"src/**/*.js\""
+  },
+  "keywords": [
+    "ssh",
+    "provisioning",
+    "docker",
+    "websocket",
+    "express",
+    "server-manager"
+  ],
+  "author": {
+    "name": "Rizki Ramadan",
+    "url": "https://github.com/kakonoomoide"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kakonoomoide/managable-server.git"
+  },
+  "bugs": {
+    "url": "https://github.com/kakonoomoide/managable-server/issues"
+  },
+  "homepage": "https://github.com/kakonoomoide/managable-server#readme",
+  "private": true,
   "dependencies": {
     "bcrypt": "^6.0.0",
     "date-fns": "^4.4.0",
@@ -29,6 +57,8 @@
     "ws": "^8.21.1"
   },
   "devDependencies": {
-    "nodemon": "^3.1.14"
+    "eslint": "^9.15.0",
+    "nodemon": "^3.1.14",
+    "prettier": "^3.3.3"
   }
 }
